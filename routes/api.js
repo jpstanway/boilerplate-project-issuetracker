@@ -25,16 +25,18 @@ module.exports = function (app) {
       MongoClient.connect(CONNECTION_STRING, function(err, db) {
         if(err) res.send('Failed to connect to database');
         
-        db.collection(project).insert({
+        db.collection('apitest').insert({
+          _id: ObjectId(),
           issue_title: req.body.issue_title,
           issue_text: req.body.issue_text,
+          created_on: new Date(),
+          updated_on: new Date(),
           created_by: req.body.created_by,
           assigned_to: req.body.assigned_to || 'Chai and Mocha',
+          open: true,
           status_text: req.body.status_text || 'In QA',
-          created_on: Date.now(),
-          updated_on: Date.now()
         }, function(err, result) {
-          if (err) res.send('Failed to log issue to database');
+          if (err) res.json('Failed to log issue to database');
 
           res.json(result.ops);
         });
@@ -42,6 +44,39 @@ module.exports = function (app) {
     })
     .put(function (req, res){
       var project = req.params.project;
+    
+      const updateObject = {}; // initialize update object with current time
+
+      // loop through form fields and only assign what has a value
+      for (let field in req.body) {
+        if (field && field !== '_id' && req.body[field].length > 0) {
+          updateObject[field] = req.body[field];
+        }
+      }
+
+      // send error message if object is empty, or add updated_on field
+      if (Object.keys(updateObject).length === 0) {
+        res.json('no updated field sent');
+      } else {
+        updateObject['updated_on'] = new Date();
+      }
+
+      // connect to database and update document based on id
+      MongoClient.connect(CONNECTION_STRING, function(err, db) {
+        if(err) res.send('Failed to connect to database');
+
+        db.collection('apitest').findAndModify(
+          { _id: ObjectId(req.body._id) }, // query
+          {}, // sort
+          { $set: updateObject }, // update document with update object
+          { new: true }, // update and return modified document
+          (err, result) => {
+            if (err) res.json('could not update' + req.body._id);
+
+            res.json('successfully updated ' + req.body._id);
+          }
+        );
+      });
       
     })
     .delete(function (req, res){

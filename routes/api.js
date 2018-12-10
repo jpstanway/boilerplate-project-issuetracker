@@ -25,7 +25,7 @@ module.exports = function (app) {
       MongoClient.connect(CONNECTION_STRING, function(err, db) {
         if(err) res.send('Failed to connect to database');
         
-        db.collection('apitest').insert({
+        db.collection(project).insert({
           _id: ObjectId(),
           issue_title: req.body.issue_title,
           issue_text: req.body.issue_text,
@@ -39,6 +39,7 @@ module.exports = function (app) {
           if (err) res.json('Failed to log issue to database');
 
           res.json(result.ops);
+          db.close();
         });
       });
     })
@@ -63,9 +64,9 @@ module.exports = function (app) {
 
       // connect to database and update document based on id
       MongoClient.connect(CONNECTION_STRING, function(err, db) {
-        if(err) res.send('Failed to connect to database');
+        if(err) res.json('Failed to connect to database');
 
-        db.collection('apitest').findAndModify(
+        db.collection(project).findAndModify(
           { _id: ObjectId(req.body._id) }, // query
           {}, // sort
           { $set: updateObject }, // update document with update object
@@ -74,6 +75,7 @@ module.exports = function (app) {
             if (err) res.json('could not update' + req.body._id);
 
             res.json('successfully updated ' + req.body._id);
+            db.close();
           }
         );
       });
@@ -82,6 +84,25 @@ module.exports = function (app) {
     .delete(function (req, res){
       var project = req.params.project;
       
+      // connect to database and delete by _id
+      MongoClient.connect(CONNECTION_STRING, (err, db) => {
+        if (err) res.json('Failed to connect to database');
+
+        db.collection(project).findOneAndDelete(
+          { _id: ObjectId(req.body._id) }, // document to delete
+          (err, result) => {
+            
+            if (err) {
+              res.json('could not delete ' + req.body._id);
+            } else if (result.value) {
+              res.json('deleted ' + req.body._id);
+            } else {
+              res.json('_id error');
+            }
+  
+          }
+        );
+      });
     }
   );
 };

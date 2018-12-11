@@ -19,6 +19,13 @@ module.exports = function (app) {
     .get(function (req, res){
       var project = req.params.project;
       
+      MongoClient.connect(CONNECTION_STRING, (err, db) => {
+        if (err) res.send('Failed to connect to database');
+
+        // find all documents in project collection and print to screen
+        db.collection(project).find().toArray().then((data) => res.json(data));
+      });
+
     })
     .post(function (req, res){
       var project = req.params.project;

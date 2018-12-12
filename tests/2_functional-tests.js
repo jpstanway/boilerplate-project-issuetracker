@@ -29,19 +29,44 @@ suite('Functional Tests', function() {
         })
         .end(function(err, res){
           assert.equal(res.status, 200);
-          
-          //fill me in too!
-          
+          assert.isOk(res.body[0].issue_title);
+          assert.isOk(res.body[0].issue_text);
+          assert.isOk(res.body[0].created_by);
+          assert.isOk(res.body[0].assigned_to);
+          assert.isOk(res.body[0].status_text);
           done();
         });
       });
       
       test('Required fields filled in', function(done) {
-        
+        chai.request(server)
+          .post('/api/issues/test')
+          .send({
+            issue_title: 'Title',
+            issue_text: 'text',
+            created_by: 'Functional Test - Required fields filled in'
+          })
+          .end(function(err, res) {
+            assert.equal(res.status, 200);
+            assert.isOk(res.body[0].issue_title);
+            assert.isOk(res.body[0].issue_text);
+            assert.isOk(res.body[0].created_by);
+            done();
+          });
       });
       
       test('Missing required fields', function(done) {
-        
+        chai.request(server)
+          .post('/api/issues/test')
+          .send({
+            issue_title: '',
+            issue_text: '',
+            created_by: ''
+          })
+          .end(function(err, res) {
+            assert.isNotNull(err, 'Required fields missing');
+            done();
+          });
       });
       
     });

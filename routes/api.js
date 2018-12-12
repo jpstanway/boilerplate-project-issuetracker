@@ -16,14 +16,6 @@ const CONNECTION_STRING = process.env.DB;
 
 module.exports = function (app) { 
 
-  function makeABool(boolVal) {
-    if (boolVal === 'true') {
-      return true;
-    } else if (boolVal === 'false') {
-      return false;
-    }
-  }
-
   app.route('/api/issues/:project')
     .get(function (req, res){
       var project = req.params.project;
@@ -59,6 +51,11 @@ module.exports = function (app) {
     })
     .post(function (req, res){
       var project = req.params.project;
+
+      expect(req.body.issue_title).to.not.be.empty;
+      expect(req.body.issue_text).to.not.be.empty;
+      expect(req.body.created_by).to.not.be.empty;
+
       MongoClient.connect(CONNECTION_STRING, function(err, db) {
         if(err) res.send('Failed to connect to database');
         
@@ -147,4 +144,13 @@ module.exports = function (app) {
       });
     }
   );
+
+  function makeABool(boolVal) {
+    if (boolVal === 'true') {
+      return true;
+    } else if (boolVal === 'false') {
+      return false;
+    }
+  }
+  
 };

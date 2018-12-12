@@ -15,17 +15,47 @@ var ObjectId = require('mongodb').ObjectID;
 const CONNECTION_STRING = process.env.DB;
 
 module.exports = function (app) { 
+
+  function makeABool(boolVal) {
+    if (boolVal === 'true') {
+      return true;
+    } else if (boolVal === 'false') {
+      return false;
+    }
+  }
+
   app.route('/api/issues/:project')
     .get(function (req, res){
       var project = req.params.project;
+      const filter = req.query;
+
+      // check for open status query and convert string to boolean
+      if (filter.open) {
+        filter.open = makeABool(filter.open);
+      }
+
+      // check for created on query and convert string to date
+      if (filter.created_on) {
+        filter.created_on = new Date(filter.created_on);
+      }
+
+      // check for updated on query and convert string to date
+      if (filter.updated_on) {
+        filter.updated_on = new Date(filter.updated_on);
+      }
       
+      // connect to db
       MongoClient.connect(CONNECTION_STRING, (err, db) => {
         if (err) res.send('Failed to connect to database');
 
         // find all documents in project collection and print to screen
-        db.collection(project).find().toArray().then((data) => res.json(data));
-      });
+        db.collection(project).find(filter).toArray().then((err, result) => {
+          if (err) res.json('Failed to find project');
 
+          res.json(result);
+          db.close();
+        });
+      });
     })
     .post(function (req, res){
       var project = req.params.project;
@@ -67,6 +97,11 @@ module.exports = function (app) {
         res.json('no updated field sent');
       } else {
         updateObject['updated_on'] = new Date();
+
+        // also check for open status and convert to boolean
+        if (updateObject.open) {
+          updateObject.open = makeABool(updateObject.open);
+        }
       }
 
       // connect to database and update document based on id
@@ -106,7 +141,7 @@ module.exports = function (app) {
             } else {
               res.json('_id error');
             }
-  
+            db.close();
           }
         );
       });

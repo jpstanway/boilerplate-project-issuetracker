@@ -74,15 +74,42 @@ suite('Functional Tests', function() {
     suite('PUT /api/issues/{project} => text', function() {
       
       test('No body', function(done) {
-        
+        chai.request(server)
+          .put('/api/issues/test')
+          .send(['_id'])
+          .end(function(err, res) {
+            assert.isNotNull(err, 'no updated fields sent');
+            done();
+          });
       });
       
       test('One field to update', function(done) {
-        
+        chai.request(server)
+          .put('/api/issues/test')
+          .send({
+            _id: '5c119ec09383781b90bf36e1',
+            issue_title: 'Updated'
+          })
+          .end(function(err, res) {
+            assert.equal(res.body, 'successfully updated 5c119ec09383781b90bf36e1');
+            done()
+          });
       });
       
       test('Multiple fields to update', function(done) {
-        
+        chai.request(server)
+          .put('/api/issues/test')
+          .send({
+            _id: '5c119ec09383781b90bf36e1',
+            issue_text: 'Functional test - Multiple fields to update',
+            created_by: 'John',
+            assigned_to: 'Sam',
+            status_text: 'Under review'
+          })
+          .end(function(err, res) {
+            assert.equal(res.body, 'successfully updated 5c119ec09383781b90bf36e1');
+            done();
+          });
       });
       
     });

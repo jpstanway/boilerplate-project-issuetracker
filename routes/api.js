@@ -50,11 +50,11 @@ module.exports = function (app) {
       });
     })
     .post(function (req, res){
-      var project = req.params.project;
-
       expect(req.body.issue_title).to.not.be.empty;
       expect(req.body.issue_text).to.not.be.empty;
       expect(req.body.created_by).to.not.be.empty;
+
+      var project = req.params.project;
 
       MongoClient.connect(CONNECTION_STRING, function(err, db) {
         if(err) res.send('Failed to connect to database');
@@ -78,9 +78,10 @@ module.exports = function (app) {
       });
     })
     .put(function (req, res){
+      expect(req.body).to.be.an('object');
+
       var project = req.params.project;
-    
-      const updateObject = {}; // initialize update object with current time
+      const updateObject = {}; 
 
       // loop through form fields and only assign what has a value
       for (let field in req.body) {
@@ -88,7 +89,7 @@ module.exports = function (app) {
           updateObject[field] = req.body[field];
         }
       }
-
+      
       // send error message if object is empty, or add updated_on field
       if (Object.keys(updateObject).length === 0) {
         res.json('no updated field sent');

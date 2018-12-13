@@ -13,6 +13,8 @@ var server = require('../server');
 
 chai.use(chaiHttp);
 
+let deleteIssue;
+
 suite('Functional Tests', function() {
   
     suite('POST /api/issues/{project} => object with issue data', function() {
@@ -42,8 +44,8 @@ suite('Functional Tests', function() {
         chai.request(server)
           .post('/api/issues/test')
           .send({
-            issue_title: 'Title',
-            issue_text: 'text',
+            issue_title: 'Delete me',
+            issue_text: 'this will be deleted later',
             created_by: 'Functional Test - Required fields filled in'
           })
           .end(function(err, res) {
@@ -51,6 +53,7 @@ suite('Functional Tests', function() {
             assert.isOk(res.body[0].issue_title);
             assert.isOk(res.body[0].issue_text);
             assert.isOk(res.body[0].created_by);
+            deleteIssue = res.body[0]._id;
             done();
           });
       });
@@ -76,9 +79,10 @@ suite('Functional Tests', function() {
       test('No body', function(done) {
         chai.request(server)
           .put('/api/issues/test')
-          .send(['_id'])
+          .send({})
           .end(function(err, res) {
-            assert.isNotNull(err, 'no updated fields sent');
+            assert.equal(res.status, 200);
+            assert.equal(res.body, 'no updated field sent');
             done();
           });
       });
@@ -87,12 +91,13 @@ suite('Functional Tests', function() {
         chai.request(server)
           .put('/api/issues/test')
           .send({
-            _id: '5c119ec09383781b90bf36e1',
-            issue_title: 'Updated'
+            _id: '5c11aa7ea134393ff485b6f6',
+            issue_title: 'one field - Updated'
           })
           .end(function(err, res) {
-            assert.equal(res.body, 'successfully updated 5c119ec09383781b90bf36e1');
-            done()
+            assert.equal(res.status, 200);
+            assert.equal(res.body, 'successfully updated 5c11aa7ea134393ff485b6f6');
+            done();
           });
       });
       
@@ -100,14 +105,16 @@ suite('Functional Tests', function() {
         chai.request(server)
           .put('/api/issues/test')
           .send({
-            _id: '5c119ec09383781b90bf36e1',
+            _id: '5c11ab00a865e7074496231b',
+            issue_title: 'multiple fields - Updated',
             issue_text: 'Functional test - Multiple fields to update',
             created_by: 'John',
             assigned_to: 'Sam',
             status_text: 'Under review'
           })
           .end(function(err, res) {
-            assert.equal(res.body, 'successfully updated 5c119ec09383781b90bf36e1');
+            assert.equal(res.status, 200);
+            assert.equal(res.body, 'successfully updated 5c11ab00a865e7074496231b');
             done();
           });
       });
@@ -120,7 +127,7 @@ suite('Functional Tests', function() {
         chai.request(server)
         .get('/api/issues/test')
         .query({})
-        .end(function(err, res){
+        .end(function(err, res) {
           assert.equal(res.status, 200);
           assert.isArray(res.body);
           assert.property(res.body[0], 'issue_title');
@@ -137,11 +144,35 @@ suite('Functional Tests', function() {
       });
       
       test('One filter', function(done) {
-        
+        chai.request(server)
+          .get('/api/issues/test')
+          .query({issue_title: 'Title'})
+          .end(function(err, res) {
+            assert.equal(res.status, 200);
+            assert.isArray(res.body);
+            assert.equal(res.body[0].issue_title, 'Title');
+            done();
+          });
       });
       
       test('Multiple filters (test for multiple fields you know will be in the db for a return)', function(done) {
-        
+        chai.request(server)
+          .get('/api/issues/test')
+          .query({
+            issue_title: 'Title',
+            issue_text: 'text',
+            assigned_to: 'Chai and Mocha',
+            status_text: 'In QA'
+          })
+          .end(function(err, res) {
+            assert.equal(res.status, 200);
+            assert.isArray(res.body);
+            assert.equal(res.body[0].issue_title, 'Title');
+            assert.equal(res.body[0].issue_text, 'text');
+            assert.equal(res.body[0].assigned_to, 'Chai and Mocha');
+            assert.equal(res.body[0].status_text, 'In QA');
+            done();
+          });
       });
       
     });
@@ -149,11 +180,25 @@ suite('Functional Tests', function() {
     suite('DELETE /api/issues/{project} => text', function() {
       
       test('No _id', function(done) {
-        
+        chai.request(server)
+          .delete('/api/issues/test')
+          .send({})
+          .end(function(err, res) {
+            assert.equal(res.status, 200);
+            assert.equal(res.body, '_id error');
+            done();
+          });
       });
       
       test('Valid _id', function(done) {
-        
+        chai.request(server)
+          .delete('/api/issues/test')
+          .send({_id: deleteIssue})
+          .end(function(err, res) {
+            assert.equal(res.status, 200);
+            assert.equal(res.body, 'deleted ' + deleteIssue);
+            done();
+          });
       });
       
     });

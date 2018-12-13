@@ -20,7 +20,7 @@ module.exports = function (app) {
     .get(function (req, res){
       var project = req.params.project;
       const filter = req.query;
-
+        
       // check for open status query and convert string to boolean
       if (filter.open) {
         filter.open = makeABool(filter.open);
@@ -41,9 +41,7 @@ module.exports = function (app) {
         if (err) res.send('Failed to connect to database');
 
         // find all documents in project collection and print to screen
-        db.collection(project).find(filter).toArray().then((err, result) => {
-          if (err) res.json('Failed to find project');
-
+        db.collection(project).find(filter).toArray().then((result) => {
           res.json(result);
           db.close();
         });
@@ -78,8 +76,6 @@ module.exports = function (app) {
       });
     })
     .put(function (req, res){
-      expect(req.body).to.be.an('object');
-
       var project = req.params.project;
       const updateObject = {}; 
 
@@ -101,7 +97,7 @@ module.exports = function (app) {
           updateObject.open = makeABool(updateObject.open);
         }
       }
-
+      
       // connect to database and update document based on id
       MongoClient.connect(CONNECTION_STRING, function(err, db) {
         if(err) res.json('Failed to connect to database');
@@ -110,7 +106,7 @@ module.exports = function (app) {
           { _id: ObjectId(req.body._id) }, // query
           {}, // sort
           { $set: updateObject }, // update document with update object
-          { new: true }, // update and return modified document
+          { upsert: true, new: true }, // update and return modified document
           (err, result) => {
             if (err) res.json('could not update' + req.body._id);
 

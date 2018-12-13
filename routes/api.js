@@ -96,26 +96,25 @@ module.exports = function (app) {
         if (updateObject.open) {
           updateObject.open = makeABool(updateObject.open);
         }
+      
+        // connect to database and update document based on id
+        MongoClient.connect(CONNECTION_STRING, function(err, db) {
+          if(err) res.json('Failed to connect to database');
+
+          db.collection(project).findAndModify(
+            { _id: ObjectId(req.body._id) }, // query
+            {}, // sort
+            { $set: updateObject }, // update document with update object
+            { upsert: true, new: true }, // update and return modified document
+            (err, result) => {
+              if (err) res.json('could not update' + req.body._id);
+
+              res.json('successfully updated ' + req.body._id);
+              db.close();
+            }
+          );
+        });
       }
-      
-      // connect to database and update document based on id
-      MongoClient.connect(CONNECTION_STRING, function(err, db) {
-        if(err) res.json('Failed to connect to database');
-
-        db.collection(project).findAndModify(
-          { _id: ObjectId(req.body._id) }, // query
-          {}, // sort
-          { $set: updateObject }, // update document with update object
-          { upsert: true, new: true }, // update and return modified document
-          (err, result) => {
-            if (err) res.json('could not update' + req.body._id);
-
-            res.json('successfully updated ' + req.body._id);
-            db.close();
-          }
-        );
-      });
-      
     })
     .delete(function (req, res){
       var project = req.params.project;
